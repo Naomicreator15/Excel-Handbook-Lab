@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>Excel Handbook Lab</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky app header with progress ring, tab bar, one working panel at a time. Spreadsheet vocabulary (cell addresses, formula bar, status bar) is the visual language. */
+:root{
+  --bg:#f3f7f4; --panel:#ffffff; --ink:#10231a; --muted:#5d7167; --line:#d5e0d9; --accent:#16794b; --accent-ink:#ffffff;
+  --accent-soft:#e1f1e8; --hi:#ffe9a8; --bad:#b3261e; --bad-soft:#fde8e6; --good:#16794b; --head:#e9efeb; --sel:#d9ecff; --selline:#2a7bd6;
+  --disp:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --body:'Figtree','Segoe UI',system-ui,sans-serif; --mono:'JetBrains Mono',Consolas,'Courier New',monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1612; --panel:#16211b; --ink:#e6f1ea; --muted:#9bb0a4; --line:#2a3a31; --accent:#4cc38a; --accent-ink:#06150d;
+  --accent-soft:#1c3328; --hi:#5a4a10; --bad:#ff8a80; --bad-soft:#3a1d1b; --good:#4cc38a; --head:#1d2b24; --sel:#17304d; --selline:#6bb0ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1612; --panel:#16211b; --ink:#e6f1ea; --muted:#9bb0a4; --line:#2a3a31; --accent:#4cc38a; --accent-ink:#06150d;
+  --accent-soft:#1c3328; --hi:#5a4a10; --bad:#ff8a80; --bad-soft:#3a1d1b; --good:#4cc38a; --head:#1d2b24; --sel:#17304d; --selline:#6bb0ff; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:1080px;margin:0 auto}
+header{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:22px 0 14px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(26px,4.4vw,38px);line-height:1.05;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.sub{color:var(--muted);margin-top:6px;max-width:46ch}
+.sub a{color:var(--accent);font-weight:600}
+.rank{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 16px}
+.ring{width:58px;height:58px;position:relative;flex:none}
+.ring svg{width:58px;height:58px;transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px}
+.rank small{display:block;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.rank strong{font-family:var(--disp);font-size:20px}
+nav{display:flex;gap:6px;overflow-x:auto;border-bottom:2px solid var(--line);margin-bottom:20px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-top:6px}
+nav button{font:600 15px var(--body);background:none;border:0;color:var(--muted);padding:10px 16px;border-radius:10px 10px 0 0;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;margin-bottom:-2px}
+nav button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-soft)}
+nav button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--selline);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+h2{font-family:var(--disp);font-size:22px;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px}
+.chip{font:500 13px var(--body);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-left:6px}
+.group{font:600 12px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px}
+.btn{font:600 14px var(--body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
+.btn.ghost{background:none;color:var(--accent);border:1.5px solid var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* quiz */
+.qhead{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:8px;font-family:var(--mono)}
+.bar{height:8px;background:var(--head);border-radius:6px;overflow:hidden;margin-bottom:18px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.q{font-family:var(--disp);font-weight:600;font-size:20px;margin:0 0 14px;text-wrap:balance}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;font:500 15px var(--body);color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:transform .12s}
+.opt:hover:not(:disabled){border-color:var(--accent);transform:translateX(3px)}
+.opt.right{background:var(--accent-soft);border-color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.why{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);animation:pop .25s}
+.why.no{background:var(--bad-soft)}
+@keyframes pop{from{transform:scale(.97);opacity:0}to{transform:none;opacity:1}}
+.score{font-family:var(--disp);font-size:44px;font-weight:800;margin:6px 0}
+/* sheet */
+.xl{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.fbar{display:flex;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px;min-height:34px}
+.fbar .nb{width:110px;border-right:1px solid var(--line);padding:7px 10px;font-weight:600;flex:none}
+.fbar .fx{padding:7px 10px;color:var(--muted);border-right:1px solid var(--line);font-style:italic;flex:none}
+.fbar .fv{padding:7px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.scroll{overflow:auto;max-height:430px}
+table.g{border-collapse:separate;border-spacing:0;font-size:13px;width:100%;min-width:900px}
+table.g th,table.g td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px 8px;white-space:nowrap;height:28px}
+table.g thead th{position:sticky;top:0;background:var(--head);z-index:2;font-weight:600;color:var(--muted);text-align:center}
+table.g th.rn{background:var(--head);color:var(--muted);text-align:center;width:44px;position:sticky;left:0;z-index:1;font-weight:400}
+table.g thead th.rn{z-index:3}
+table.g th.rn.f{color:var(--selline);font-weight:600}
+td{cursor:cell;user-select:none}
+td.sel{background:var(--sel)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.title{font-family:var(--disp);font-weight:800;font-size:15px;background:var(--accent-soft);cursor:default}
+tr.hd td{background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:default;position:sticky;top:28px;z-index:2}
+.hbtn{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0}
+.hbtn.fl{margin-left:6px;opacity:.85;border:1px solid currentColor;border-radius:4px;padding:0 5px;font-size:11px}
+.hbtn.fl.on{background:var(--hi);color:#000;opacity:1}
+.sb{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--accent);color:var(--accent-ink);padding:6px 12px;font-size:13px;font-family:var(--mono)}
+.pop{position:absolute;z-index:20;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px;min-width:200px;max-height:300px;overflow:auto;font-family:var(--body)}
+.pop label{display:flex;gap:8px;align-items:center;padding:3px 0;font-size:14px;font-weight:400}
+.pop input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.split{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.tasks{display:grid;gap:10px;margin-top:16px}
+.task{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+.task.done{border-color:var(--good);background:var(--accent-soft)}
+.task .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.task input{flex:1;min-width:140px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:500 14px var(--mono)}
+.fb{font-size:13px;margin-top:6px;color:var(--muted)}
+/* lab */
+.fin{width:100%;font:600 18px var(--mono);padding:14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.fin:focus{border-color:var(--accent);outline:none}
+.res{margin-top:12px;padding:16px;border-radius:12px;background:var(--bg);border:1px solid var(--line);min-height:84px}
+.res .v{font:800 30px var(--disp);word-break:break-word}
+.res.err{background:var(--bad-soft);border-color:var(--bad)}
+.res.err .v{color:var(--bad)}
+.tag{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cols{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px;font-size:12px;font-family:var(--mono)}
+.cols span{background:var(--head);border-radius:6px;padding:3px 8px}
+.cols b{color:var(--accent)}
+.mis{display:grid;gap:8px;margin-top:14px}
+.m{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.m.done{border-color:var(--good);background:var(--accent-soft)}
+.m.cur{outline:2px solid var(--selline)}
+.m .n{font:600 13px var(--mono);width:26px;height:26px;border-radius:50%;background:var(--head);display:flex;align-items:center;justify-content:center;flex:none}
+.m.done .n{background:var(--good);color:var(--accent-ink)}
+code{font-family:var(--mono);background:var(--head);padding:1px 6px;border-radius:5px;font-size:.92em}
+/* cards */
+.deck{perspective:1000px;max-width:520px;margin:10px auto}
+.card{height:220px;position:relative;transform-style:preserve-3d;transition:transform .5s;cursor:pointer}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;border:2px solid var(--line)}
+.face.f{background:var(--bg)}
+.face.b{background:var(--accent);color:var(--accent-ink);transform:rotateY(180deg);border-color:var(--accent)}
+.face .k{font:800 clamp(24px,5vw,34px) var(--mono)}
+.face .p{font:600 21px var(--disp);text-wrap:balance}
+.actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (min-width:900px){.split.two{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>Excel Handbook Lab</h1>
+    <p class="sub">Practice what you read. Quiz yourself, sort and filter real Zenith sales data, write formulas that run, and drill the shortcuts. Companion to the <a href="https://claude.ai/artifact/6xNWGu4wuoFGLdP6HZTFkj" target="_blank" rel="noopener">Microsoft Excel Beginner Handbook</a>.</p>
+  </div>
+  <div class="rank" aria-live="polite">
+    <div class="ring"><svg viewBox="0 0 58 58"><circle cx="29" cy="29" r="25" fill="none" stroke="var(--head)" stroke-width="7"/><circle id="ringc" cx="29" cy="29" r="25" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/></svg><b id="pct">0%</b></div>
+    <div><small>Your level</small><strong id="rank">Newcomer</strong><small id="next"></small></div>
+  </div>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" id="t-quiz" data-tab="quiz">Quiz</button>
+  <button role="tab" id="t-sheet" data-tab="sheet">Practice sheet</button>
+  <button role="tab" id="t-lab" data-tab="lab">Formula lab</button>
+  <button role="tab" id="t-cards" data-tab="cards">Shortcut cards</button>
+</nav>
+<main id="view"></main>
+</div>
+
+<script>
+"use strict";
+/* ---------- data: the 30 Zenith orders from Chapter 7 ---------- */
+const RAW=`ORD-001|05/01/2024|Emeka Okafor|Lagos|Electronics|Bluetooth Speaker|12|15500|Completed
+ORD-002|07/01/2024|Naomi Ajah|Abuja|Groceries|Premium Rice (25kg)|20|18000|Completed
+ORD-003|09/01/2024|Chidi Nwosu|Port Harcourt|Clothing|Men's Work Suit|5|45000|Pending
+ORD-004|11/01/2024|Funke Adeleke|Kano|Household|Standing Fan|10|12000|Completed
+ORD-005|15/01/2024|Emeka Okafor|Lagos|Electronics|Wireless Earbuds|30|8500|Completed
+ORD-006|18/01/2024|Amara Eze|Ibadan|Groceries|Cooking Oil (5L)|40|4200|Completed
+ORD-007|22/01/2024|Naomi Ajah|Abuja|Electronics|Portable Charger|15|6500|Cancelled
+ORD-008|25/01/2024|Bola Adesanya|Lagos|Household|Dinner Set|8|22000|Completed
+ORD-009|28/01/2024|Chidi Nwosu|Port Harcourt|Clothing|Ladies Ankara Dress|25|8000|Completed
+ORD-010|30/01/2024|Funke Adeleke|Kano|Groceries|Vegetable Oil (20L)|60|9500|Pending
+ORD-011|02/02/2024|Emeka Okafor|Lagos|Electronics|Smart Watch|6|35000|Completed
+ORD-012|05/02/2024|Amara Eze|Ibadan|Household|Pressure Cooker|14|14500|Completed
+ORD-013|08/02/2024|Bola Adesanya|Lagos|Clothing|Children School Uniform|50|5500|Completed
+ORD-014|12/02/2024|Naomi Ajah|Abuja|Electronics|Laptop Stand|20|7800|Completed
+ORD-015|14/02/2024|Chidi Nwosu|Port Harcourt|Groceries|Tomato Paste (Carton)|35|11000|Pending
+ORD-016|16/02/2024|Funke Adeleke|Kano|Electronics|Power Bank 20000mAh|24|9200|Completed
+ORD-017|20/02/2024|Amara Eze|Ibadan|Clothing|Traditional Buba Set|10|18500|Cancelled
+ORD-018|22/02/2024|Emeka Okafor|Lagos|Household|Water Dispenser|7|28000|Completed
+ORD-019|26/02/2024|Bola Adesanya|Lagos|Groceries|Noodles (Carton)|80|4800|Completed
+ORD-020|28/02/2024|Naomi Ajah|Abuja|Household|Electric Kettle|18|8900|Completed
+ORD-021|04/03/2024|Chidi Nwosu|Port Harcourt|Electronics|Bluetooth Speaker|9|15500|Completed
+ORD-022|07/03/2024|Funke Adeleke|Kano|Clothing|Men's Kaftan|16|12000|Pending
+ORD-023|11/03/2024|Amara Eze|Ibadan|Groceries|Semovita (10kg)|45|3800|Completed
+ORD-024|13/03/2024|Emeka Okafor|Lagos|Electronics|Wireless Mouse|22|5200|Completed
+ORD-025|15/03/2024|Bola Adesanya|Lagos|Household|Iron and Board Set|11|16500|Completed
+ORD-026|18/03/2024|Naomi Ajah|Abuja|Clothing|Office Blazer|6|32000|Cancelled
+ORD-027|20/03/2024|Chidi Nwosu|Port Harcourt|Household|Gas Cooker|4|45000|Completed
+ORD-028|22/03/2024|Funke Adeleke|Kano|Groceries|Rice (50kg)|30|24000|Completed
+ORD-029|26/03/2024|Amara Eze|Ibadan|Electronics|USB Hub 7-Port|28|3500|Completed
+ORD-030|29/03/2024|Bola Adesanya|Lagos|Clothing|Women's Boubou|12|14000|Pending`;
+const serial=s=>{const[d,m,y]=s.split('/').map(Number);return Math.round((Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/864e5)};
+const fmtDate=n=>{const d=new Date(Date.UTC(1899,11,30)+n*864e5);return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear()};
+/* columns A..J: Order ID, Date, Rep, Region, Category, Product, Units, Price, Revenue, Status */
+const DATA=RAW.split('\n').map(l=>{const p=l.split('|');const u=+p[6],pr=+p[7];return[p[0],serial(p[1]),p[2],p[3],p[4],p[5],u,pr,u*pr,p[8]]});
+const HEAD=['Order ID','Order Date','Sales Rep','Region','Product Category','Product Name','Units Sold','Unit Price (NGN)','Revenue (NGN)','Status'];
+const LET='ABCDEFGHIJ';
+const NUMCOL=new Set([1,6,7,8]);
+const nf=new Intl.NumberFormat('en-US',{maximumFractionDigits:4});
+const fmtCell=(c,v)=>c===1?fmtDate(v):(typeof v==='number'?nf.format(v):v);
+
+/* ---------- formula engine ---------- */
+class XlErr{constructor(c){this.code=c}}
+const E=c=>new XlErr(c);
+const isErr=v=>v instanceof XlErr;
+function sheetCell(c,r){ if(r===2) return c<10?HEAD[c]:null; if(r>=3&&r<=32&&c<10) return DATA[r-3][c]; if(r===1&&c===0) return 'Zenith Consumer Goods Limited, Q1 2024 Sales Records'; return null}
+const colNum=s=>{let n=0;for(const ch of s.toUpperCase())n=n*26+ch.charCodeAt(0)-64;return n-1};
+function tokenize(src){
+  const re=/\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+)|("(?:[^"]|"")*")|(\$?[A-Za-z]{1,2}\$?\d+(?::\$?[A-Za-z]{1,2}\$?\d+)?)|([A-Za-z_][A-Za-z0-9_.]*)|(<=|>=|<>|[-+*\/^&=<>(),%])|(\S))/y;
+  const out=[];re.lastIndex=0;let m;
+  while(re.lastIndex<src.length&&(m=re.exec(src))){
+    if(m[1]!==undefined)out.push({t:'num',v:parseFloat(m[1])});
+    else if(m[2]!==undefined)out.push({t:'str',v:m[2].slice(1,-1).replace(/""/g,'"')});
+    else if(m[3]!==undefined)out.push({t:'ref',v:m[3]});
+    else if(m[4]!==undefined)out.push({t:'id',v:m[4]});
+    else if(m[5]!==undefined)out.push({t:'op',v:m[5]});
+    else if(m[6]!==undefined)throw new Error('char:'+m[6]);
+    else break;
+  }
+  return out;
+}
+function parse(tokens){
+  let i=0;const peek=()=>tokens[i],next=()=>tokens[i++];
+  const isOp=v=>peek()&&peek().t==='op'&&peek().v===v;
+  function cmp(){let l=cat();while(peek()&&peek().t==='op'&&['=','<>','<','>','<=','>='].includes(peek().v)){const o=next().v;l={k:'bin',o,l,r:cat()}}return l}
+  function cat(){let l=add();while(isOp('&')){next();l={k:'bin',o:'&',l,r:add()}}return l}
+  function add(){let l=mul();while(isOp('+')||isOp('-')){const o=next().v;l={k:'bin',o,l,r:mul()}}return l}
+  function mul(){let l=pow();while(isOp('*')||isOp('/')){const o=next().v;l={k:'bin',o,l,r:pow()}}return l}
+  function pow(){let l=unary();while(isOp('^')){next();l={k:'bin',o:'^',l,r:unary()}}return l}
+  function unary(){if(isOp('-')){next();return{k:'neg',e:unary()}}if(isOp('+')){next();return unary()}return post()}
+  function post(){let e=prim();while(isOp('%')){next();e={k:'pct',e}}return e}
+  function prim(){
+    const t=next();if(!t)throw new Error('end');
+    if(t.t==='num')return{k:'lit',v:t.v};
+    if(t.t==='str')return{k:'lit',v:t.v};
+    if(t.t==='ref')return{k:'ref',v:t.v};
+    if(t.t==='id'){
+      if(isOp('(')){next();const args=[];if(!isOp(')')){for(;;){if(isOp(',')||isOp(')')){args.push({k:'blank'})}else args.push(cmp());if(isOp(',')){next();continue}break}}
+        if(!isOp(')'))throw new Error('paren');next();return{k:'fn',n:t.v.toUpperCase(),a:args}}
+      const u=t.v.toUpperCase();if(u==='TRUE')return{k:'lit',v:true};if(u==='FALSE')return{k:'lit',v:false};
+      return{k:'name',v:t.v};
+    }
+    if(t.t==='op'&&t.v==='('){const e=cmp();if(!isOp(')'))throw new Error('paren');next();return e}
+    throw new Error('unexpected');
+  }
+  const e=cmp();if(i<tokens.length)throw new Error('extra');return e;
+}
+function refVal(s){
+  const m=s.replace(/\$/g,'').match(/^([A-Za-z]+)(\d+)(?::([A-Za-z]+)(\d+))?$/);
+  const c1=colNum(m[1]),r1=+m[2];
+  if(!m[3])return sheetCell(c1,r1);
+  const c2=colNum(m[3]),r2=+m[4];const a=[];
+  for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++){const row=[];for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)row.push(sheetCell(c,r));a.push(row)}
+  return{arr:a};
+}
+const isArr=v=>v&&typeof v==='object'&&Array.isArray(v.arr);
+const flat=v=>isArr(v)?v.arr.flat():[v];
+function num(v){
+  if(isErr(v))throw v;
+  if(isArr(v)){const f=v.arr.flat();if(f.length===1)return num(f[0]);throw E('#VALUE!')}
+  if(v===null||v===undefined||v==='')return 0;
+  if(typeof v==='number')return v;
+  if(typeof v==='boolean')return v?1:0;
+  const n=Number(String(v).replace(/,/g,''));if(String(v).trim()===''||Number.isNaN(n))throw E('#VALUE!');return n;
+}
+function str(v){
+  if(isErr(v))throw v;
+  if(isArr(v)){const f=v.arr.flat();if(f.length===1)return str(f[0]);throw E('#VALUE!')}
+  if(v===null||v===undefined)return'';
+  if(typeof v==='boolean')return v?'TRUE':'FALSE';
+  return String(v);
+}
+const wild=p=>new RegExp('^'+p.replace(/[.+^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*').replace(/\?/g,'.')+'$','i');
+function matcher(c){
+  if(typeof c==='number')return v=>typeof v==='number'&&v===c;
+  if(typeof c==='boolean')return v=>v===c;
+  const m=String(c).match(/^(>=|<=|<>|>|<|=)?([\s\S]*)$/);const op=m[1]||'=',rhs=m[2];
+  const rn=rhs.trim()!==''&&!Number.isNaN(Number(rhs))?Number(rhs):null;
+  if(rn!==null){return v=>{if(typeof v!=='number'){return op==='<>'}
+    switch(op){case'=':return v===rn;case'<>':return v!==rn;case'>':return v>rn;case'<':return v<rn;case'>=':return v>=rn;default:return v<=rn}}}
+  const re=wild(rhs);
+  return v=>{const s=v===null||v===undefined?'':String(v);const t=re.test(s);return op==='<>'?!t:t};
+}
+const nums=args=>{const o=[];for(const a of args){if(isErr(a))throw a;if(isArr(a)){for(const x of a.arr.flat()){if(isErr(x))throw x;if(typeof x==='number')o.push(x)}}else if(a!==null&&a!==undefined&&a!==''){o.push(num(a))}}return o};
+function critRows(pairs){ // pairs: [range, crit]...
+  const first=flat(pairs[0][0]).length;let ok=Array(first).fill(true);
+  for(const[r,c]of pairs){const f=flat(r);if(f.length!==first)throw E('#VALUE!');const mt=matcher(isArr(c)?flat(c)[0]:c);f.forEach((v,i)=>{if(!mt(v))ok[i]=false})}
+  return ok;
+}
+function roundTo(x,n){const p=Math.pow(10,n);return Math.sign(x)*Math.round(Math.abs(x)*p+1e-9)/p}
+function textFmt(v,f){
+  if(/[ymd]/i.test(f)&&typeof v==='number'){
+    const d=new Date(Date.UTC(1899,11,30)+v*864e5);
+    const M=['January','February','March','April','May','June','July','August','September','October','November','December'],D=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    return f.replace(/yyyy|mmmm|mmm|mm|dddd|ddd|dd|d/gi,t=>{switch(t.toLowerCase()){case'yyyy':return d.getUTCFullYear();case'mmmm':return M[d.getUTCMonth()];case'mmm':return M[d.getUTCMonth()].slice(0,3);case'mm':return String(d.getUTCMonth()+1).padStart(2,'0');case'dddd':return D[d.getUTCDay()];case'ddd':return D[d.getUTCDay()].slice(0,3);case'dd':return String(d.getUTCDate()).padStart(2,'0');default:return d.getUTCDate()}});
+  }
+  const x=num(v);const pc=f.includes('%');const dec=(f.split('.')[1]||'').replace(/[^0#]/g,'').length;
+  return (pc?x*100:x).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec,useGrouping:f.includes(',')})+(pc?'%':'');
+}
+const FN={
+  SUM:a=>nums(a).reduce((s,x)=>s+x,0),
+  AVERAGE:a=>{const n=nums(a);if(!n.length)throw E('#DIV/0!');return n.reduce((s,x)=>s+x,0)/n.length},
+  MIN:a=>{const n=nums(a);return n.length?Math.min(...n):0},
+  MAX:a=>{const n=nums(a);return n.length?Math.max(...n):0},
+  COUNT:a=>a.reduce((s,x)=>s+(isArr(x)?x.arr.flat().filter(v=>typeof v==='number').length:(typeof x==='number'?1:0)),0),
+  COUNTA:a=>a.reduce((s,x)=>s+flat(x).filter(v=>v!==null&&v!==undefined&&v!=='').length,0),
+  MEDIAN:a=>{const n=nums(a).sort((x,y)=>x-y);if(!n.length)throw E('#NUM!');const h=n.length>>1;return n.length%2?n[h]:(n[h-1]+n[h])/2},
+  ROUND:a=>roundTo(num(a[0]),a[1]===undefined?0:num(a[1])),
+  ABS:a=>Math.abs(num(a[0])),
+  IF:a=>{const c=a[0];if(isErr(c))throw c;const t=typeof c==='string'?(()=>{throw E('#VALUE!')})():!!num(c);return t?(a[1]===undefined||a[1].k==='blank'?0:a[1]):(a.length<3?false:a[2])},
+  AND:a=>flat(a.length?{arr:a.map(x=>flat(x))}:0).flat().every(v=>!!num(v)),
+  OR:a=>flat({arr:a.map(x=>flat(x))}).flat().some(v=>!!num(v)),
+  NOT:a=>!num(a[0]),
+  SUMIF:a=>{const r=flat(a[0]),s=a[2]?flat(a[2]):r,mt=matcher(a[1]);let t=0;r.forEach((v,i)=>{if(mt(v)&&typeof s[i]==='number')t+=s[i]});return t},
+  COUNTIF:a=>{const mt=matcher(a[1]);return flat(a[0]).filter(mt).length},
+  AVERAGEIF:a=>{const r=flat(a[0]),s=a[2]?flat(a[2]):r,mt=matcher(a[1]);const x=[];r.forEach((v,i)=>{if(mt(v)&&typeof s[i]==='number')x.push(s[i])});if(!x.length)throw E('#DIV/0!');return x.reduce((p,q)=>p+q,0)/x.length},
+  SUMIFS:a=>{const pairs=[];for(let i=1;i<a.length;i+=2)pairs.push([a[i],a[i+1]]);const ok=critRows(pairs),s=flat(a[0]);return s.reduce((t,v,i)=>t+(ok[i]&&typeof v==='number'?v:0),0)},
+  COUNTIFS:a=>{const pairs=[];for(let i=0;i<a.length;i+=2)pairs.push([a[i],a[i+1]]);return critRows(pairs).filter(Boolean).length},
+  AVERAGEIFS:a=>{const pairs=[];for(let i=1;i<a.length;i+=2)pairs.push([a[i],a[i+1]]);const ok=critRows(pairs),s=flat(a[0]).filter((v,i)=>ok[i]&&typeof v==='number');if(!s.length)throw E('#DIV/0!');return s.reduce((p,q)=>p+q,0)/s.length},
+  LEFT:a=>str(a[0]).slice(0,a[1]===undefined?1:num(a[1])),
+  RIGHT:a=>{const s=str(a[0]),n=a[1]===undefined?1:num(a[1]);return n?s.slice(-n):''},
+  MID:a=>str(a[0]).substr(num(a[1])-1,num(a[2])),
+  LEN:a=>str(a[0]).length,
+  UPPER:a=>str(a[0]).toUpperCase(),
+  LOWER:a=>str(a[0]).toLowerCase(),
+  PROPER:a=>str(a[0]).toLowerCase().replace(/(^|[^a-z])([a-z])/g,(m,p,c)=>p+c.toUpperCase()),
+  TRIM:a=>str(a[0]).trim().replace(/\s+/g,' '),
+  FIND:a=>{const i=str(a[1]).indexOf(str(a[0]),a[2]===undefined?0:num(a[2])-1);if(i<0)throw E('#VALUE!');return i+1},
+  VALUE:a=>num(str(a[0])),
+  SUBSTITUTE:a=>str(a[0]).split(str(a[1])).join(str(a[2])),
+  DATE:a=>Math.round((Date.UTC(num(a[0]),num(a[1])-1,num(a[2]))-Date.UTC(1899,11,30))/864e5),
+  YEAR:a=>new Date(Date.UTC(1899,11,30)+num(a[0])*864e5).getUTCFullYear(),
+  MONTH:a=>new Date(Date.UTC(1899,11,30)+num(a[0])*864e5).getUTCMonth()+1,
+  DAY:a=>new Date(Date.UTC(1899,11,30)+num(a[0])*864e5).getUTCDate(),
+  TEXT:a=>textFmt(a[0],str(a[1])),
+  XLOOKUP:a=>{const k=a[0],L=flat(a[1]),R=flat(a[2]),mode=a[4]===undefined||a[4].k==='blank'?0:num(a[4]);let idx=-1;
+    const eq=(x,y)=>typeof x==='string'&&typeof y==='string'?x.toLowerCase()===y.toLowerCase():x===y;
+    if(mode===0)idx=L.findIndex(v=>eq(v,k));
+    else{let best=null;L.forEach((v,i)=>{if(typeof v!=='number'||typeof k!=='number')return;if(mode===-1&&v<=k&&(best===null||v>L[best]))best=i;if(mode===1&&v>=k&&(best===null||v<L[best]))best=i});idx=best===null?-1:best}
+    if(idx<0){if(a[3]!==undefined&&a[3].k!=='blank')return a[3];throw E('#N/A')}return R[idx]},
+  VLOOKUP:a=>{const t=a[1].arr,c=num(a[2])-1,exact=a[3]!==undefined&&!num(a[3]);
+    if(c<0||c>=t[0].length)throw E('#REF!');
+    if(exact||a[3]===undefined&&false){const r=t.find(x=>String(x[0]).toLowerCase()===String(a[0]).toLowerCase());if(!r)throw E('#N/A');return r[c]}
+    let best=null;t.forEach(x=>{if(typeof x[0]==='number'&&x[0]<=a[0]&&(best===null||x[0]>best[0]))best=x});if(!best)throw E('#N/A');return best[c]},
+  INDEX:a=>{const t=a[0].arr,r=num(a[1]),c=a[2]===undefined?1:num(a[2]);const row=t[r-1];if(!row||c<1||c>row.length)throw E('#REF!');return row[c-1]},
+  MATCH:a=>{const L=flat(a[1]),ty=a[2]===undefined?1:num(a[2]);if(ty===0){const i=L.findIndex(v=>String(v).toLowerCase()===String(a[0]).toLowerCase());if(i<0)throw E('#N/A');return i+1}
+    let b=-1;L.forEach((v,i)=>{if(typeof v==='number'&&v<=a[0]&&(b<0||v>L[b]))b=i});if(b<0)throw E('#N/A');return b+1},
+  IFERROR:null
+};
+function ev(n){
+  switch(n.k){
+    case'lit':return n.v;
+    case'blank':return null;
+    case'ref':return refVal(n.v);
+    case'name':throw E('#NAME?');
+    case'neg':return -num(ev(n.e));
+    case'pct':return num(ev(n.e))/100;
+    case'bin':{
+      const l=ev(n.l),r=ev(n.r);
+      if(isErr(l))throw l;if(isErr(r))throw r;
+      switch(n.o){
+        case'+':return num(l)+num(r);case'-':return num(l)-num(r);case'*':return num(l)*num(r);
+        case'/':{const d=num(r);if(d===0)throw E('#DIV/0!');return num(l)/d}
+        case'^':return Math.pow(num(l),num(r));
+        case'&':return str(l)+str(r);
+        default:{const a=isArr(l)?flat(l)[0]:l,b=isArr(r)?flat(r)[0]:r;
+          const cmpv=(x,y)=>{if(typeof x==='number'&&typeof y==='number')return x-y;if(typeof x==='string'&&typeof y==='string'){const p=x.toLowerCase(),q=y.toLowerCase();return p<q?-1:p>q?1:0}
+            const rank=v=>typeof v==='number'?0:typeof v==='string'?1:2;if(x===null)x=typeof y==='string'?'':0;if(y===null)y=typeof x==='string'?'':0;return rank(x)-rank(y)||0};
+          const c=cmpv(a,b);return{'=':c===0,'<>':c!==0,'<':c<0,'>':c>0,'<=':c<=0,'>=':c>=0}[n.o]}
+      }}
+    case'fn':{
+      if(n.n==='IFERROR'){let v;try{v=ev(n.a[0]);if(isErr(v))throw v}catch(e){if(e instanceof XlErr)return n.a[1]?ev(n.a[1]):0;throw e}return v}
+      const f=FN[n.n];if(!f)throw E('#NAME?');
+      const args=n.a.map(x=>x.k==='blank'?{k:'blank'}:ev(x));
+      const out=f(args);return out;
+    }
+  }
+}
+function evalFormula(src){
+  src=src.trim();if(!src.startsWith('='))return{ok:false,msg:'Start with an equals sign, like every Excel formula.'};
+  try{const ast=parse(tokenize(src.slice(1)));let v=ev(ast);if(isArr(v))v=v.arr.length===1&&v.arr[0].length===1?v.arr[0][0]:(()=>{throw E('#VALUE!')})();return{ok:true,v:v===null?0:v}}
+  catch(e){if(e instanceof XlErr)return{ok:true,v:e};return{ok:false,msg:'Excel could not read this formula. Check the brackets, commas and quotation marks.'}}
+}
+const ERRMSG={'#DIV/0!':'Division by zero. Check the divisor (Chapter 12).','#N/A':'A lookup found no match. Check spelling and spaces.','#NAME?':'Excel does not recognise a word. Check the function name, or put text in quotes.','#VALUE!':'A value is the wrong type, such as text in a calculation.','#REF!':'A reference points at something that does not exist.','#NUM!':'The number is not valid for this calculation.'};
+const showVal=v=>isErr(v)?v.code:typeof v==='number'?(Number.isFinite(v)?nf.format(+v.toFixed(8)):'#NUM!'):typeof v==='boolean'?(v?'TRUE':'FALSE'):String(v);
+
+/* ---------- progress ---------- */
+const KEY='xl-handbook-lab-v1';
+let P={quiz:{},lab:{},sheet:{},cards:{}};
+try{const s=localStorage.getItem(KEY);if(s)P=Object.assign(P,JSON.parse(s))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}};
+const $=(s,r=document)=>r.querySelector(s);
+const h=(s)=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function total(){return 17+MISSIONS.length+SHEET_TASKS.length+CARDS.length}
+function done(){return Object.keys(P.quiz).length+Object.keys(P.lab).length+Object.keys(P.sheet).length+Object.keys(P.cards).length}
+function paint(){
+  const p=done()/total();const pc=Math.round(p*100);
+  $('#pct').textContent=pc+'%';$('#ringc').style.strokeDashoffset=157*(1-p);
+  const ranks=[['Newcomer',0],['Navigator',.2],['Analyst',.5],['Excel Pro',.85]];
+  let r=0;ranks.forEach((x,i)=>{if(p>=x[1])r=i});$('#rank').textContent=ranks[r][0];
+  $('#next').textContent=r<3?`${Math.ceil(ranks[r+1][1]*total())-done()} more to ${ranks[r+1][0]}`:'Top level reached';
+}
+
+/* ---------- quiz data (first option is correct; options are shuffled when shown) ---------- */
+const CH=['Introduction','Interface','Navigation','Data entry','Sorting','Filtering','Practical','Formulas','Logic and conditions','Text and dates','Lookups','Errors','Validation and formatting','Charts','PivotTables','Printing and sharing','Capstone'];
+const QZ={
+1:[["C5","5C","C-5","R5C","Column letter first, then row number. The cell in column C, row 5 is C5."],["The workbook is the file, and worksheets are pages inside it","They are the same thing","A worksheet is the file, and workbooks are its pages","A workbook is only one sheet","Think of a workbook as a notebook and each worksheet as a page."],["About 1 million rows per worksheet","Unlimited rows","About 10,000 rows","About 65 rows per screen","A worksheet holds 1,048,576 rows. Very large datasets need SQL or Python."]],
+2:[["The Formula Bar","The Title Bar","The Status Bar","The Quick Access Toolbar","The Formula Bar shows what is actually stored, such as =SUM(B2:B50), while the cell shows the result."],["Press Ctrl + F1","Reinstall Excel","Press Ctrl + Z","Open a new workbook","Ctrl + F1 collapses and restores the Ribbon. It was never deleted."],["F12 opens Save As, so you can keep the original","Ctrl + S makes a copy","F12 deletes the old file","They do exactly the same","Ctrl + S overwrites without warning. F12 lets you save under a new name or place."]],
+3:[["Ctrl + End","Ctrl + Home","Page Down","Ctrl + Space","Ctrl + End goes to the last used cell. If it lands far past your data, clear the extra formatting."],["Ctrl + Shift + Down","Shift + Space","Ctrl + A","F5","Ctrl + Shift + Arrow selects to the end of the data in one keystroke."],["Go To Special, Blanks, type a value, Ctrl + Enter","Delete each blank by hand","Use Flash Fill","Sort the column","Ctrl + Enter fills every selected blank cell at once."]],
+4:[["It is stored as text","It is a date","It is a formula","It is a percentage","Numbers right-align by default. A left-aligned number is probably text and will not add up."],["Type 75% or 0.75","Type 75, then click the % button","Type 7500","Type 0.075","Typing 75 and then clicking % gives 7500%."],["Type an apostrophe first, like '08012345678","Add a minus sign","Format as Percentage","Use Ctrl + E","The apostrophe forces text, so the leading zero stays."]],
+5:[["Choose Expand the selection (sort the whole table)","Sort only the column you clicked","Delete the other columns","Merge the cells","Sorting one column alone scrambles your records."],["It groups by Region, then ranks revenue within each region","It ranks revenue, then regions","It ignores the second level","It deletes duplicates","The first level groups, and the second only orders ties inside each group."],["Add a numbered ID column first","Press Ctrl + S","Use Redo","Nothing is needed","Undo is lost once you save and close, so keep an ID column to restore the original order."]],
+6:[["Filtering hides rows, sorting reorders them","They are the same","Filtering deletes rows","Sorting hides rows","Hidden rows are not deleted. Their row numbers simply turn blue."],["A filter is active","The sheet is protected","The rows are deleted","The file is corrupted","Blue row numbers and a funnel icon mean a filter is on."],["SUM still counts the hidden rows","SUM ignores hidden rows","SUM turns off the filter","SUM only adds blanks","Use the Status Bar on visible cells, or SUBTOTAL, to total only what shows."]],
+7:[["Center Across Selection","Merge and Centre","Ctrl + E","Delete the title","Merging breaks sorting and tables. Center Across Selection gives the same look safely."],["Dates are right-aligned","Dates are in bold","Dates are blue","Dates are underlined","A right-aligned date is a real date. A left-aligned one is text."],["It opens at the top, at A1","It saves faster","It adds a password","It protects formulas","Ctrl + Home before saving means the file opens neatly at A1."]],
+8:[["14","20","23","5","Multiplication comes before addition, so 3 times 4 is 12, plus 2 is 14."],["$B$7","B7","B$7 only","$B7 only","Dollar signs lock a reference, and F4 cycles through the types."],["A few very large orders pull the average up","The median is miscalculated","Excel rounds the average","There are blank cells","The average is 229,630 but the median is 189,000, so outliers are at work."]],
+9:[["=SUMIF(D3:D32,\"Lagos\",I3:I32)","=SUMIF(I3:I32,\"Lagos\",D3:D32)","=SUM(Lagos)","=IF(D3:D32,Lagos)","SUMIF takes the range to check, the condition, then the range to add."],["The range to add comes first","The condition comes first","It needs no ranges","It only works on dates","In SUMIFS the sum range leads, then pairs of range and condition."],["2 orders","0 orders","30 orders","It returns an error","The asterisks are wildcards, so \"*Rice*\" matches Premium Rice (25kg) and Rice (50kg)."]],
+10:[["ORD","001","3","A3","LEFT takes characters from the start of the text."],["84 days","3 days","30 days","12 days","Dates are numbers, so subtracting the first order date from the last gives the days between."],["It removes extra spaces","It makes text bold","It adds spaces","It converts to dates","Invisible spaces are among the most common causes of failing lookups."]],
+11:[["The result to show if nothing is found","The column number","The sort order","The lookup value","This saves you from ugly #N/A errors."],["Exact match","Approximate match","Sort ascending","Skip blanks","Always type FALSE unless you want a band."],["A trailing space in the name","The sheet is too wide","Bold text","The font is wrong","\"Naomi Ajah \" does not equal \"Naomi Ajah\". Use TRIM to clean it."]],
+12:[["Dividing by zero or an empty cell","A misspelt function","A deleted column","Text in a calculation","#DIV/0! means the divisor is zero or empty."],["The column is too narrow","The formula is wrong","The file is corrupt","The value is a date","Widen the column. It is not a true error."],["A row or column the formula used was deleted","A lookup found nothing","A function name is misspelt","Division by zero","#REF! means a broken reference. Use Trace Dependents before you delete."]],
+13:[["Data, Data Validation, List","Home, Format","Insert, Table","Review, Comment","A List rule gives a drop-down arrow in each cell."],["Whole row coloured, because $ locks the column","Only column J coloured","Nothing happens","Every cell turns red","In =$J3=\"Cancelled\" the $ keeps the check on column J for every cell in the row."],["Circle Invalid Data","Remove Duplicates","Flash Fill","Freeze Panes","It circles values that break the rule, including old data."]],
+14:[["A line chart","A doughnut chart","A scatter chart","A 3-D pie","Lines show how something changes over time."],["Start bars and columns at zero","Cut the axis to exaggerate","Use 3-D effects","Use rainbow colours","A truncated axis exaggerates differences."],["A title that states the finding","A short generic label","No title","The file name","\"Lagos and Kano generate 58% of Q1 revenue\" beats \"Revenue by Region\"."]],
+15:[["Refresh it (Alt + F5)","It updates itself instantly","Delete and rebuild","Press F9 twice","A PivotTable does not update automatically when the data changes."],["Values","Rows","Filters","Columns","Values holds the numbers to summarise, such as Sum of Revenue."],["One header row, no blank rows, no merged cells","Merged titles on every column","Blank rows between groups","Mixed text and numbers in a column","Tidy data builds reliable PivotTables."]],
+16:[["Print Titles","Print Area","Scale to Fit","Margins","Print Titles repeats the header row on every page."],["The sheet must be protected for the lock to work","Locking works immediately","Locked cells cannot be formatted","Passwords are recoverable","Cells are locked by default, but nothing is enforced until you protect the sheet."],["PDF","XLSX","CSV","XLSM","A PDF keeps the layout and cannot be edited by accident."]],
+17:[["Every figure should be a formula or a PivotTable","Type the final numbers in","Paste values from a calculator","Use pictures of numbers","Typed numbers go stale. Formulas update by themselves."],["1,540,000","474,500","4,874,400","229,630","Five pending orders are worth 1,540,000 in Q1."],["Funke Adeleke, at 214.4% of target","Emeka Okafor, at 106.8%","Amara Eze, at 117.9%","Chidi Nwosu, at 141.2%","Funke's 1,822,800 against an 850,000 target is the highest achievement."]]
+};
+
+/* ---------- shortcut cards ---------- */
+const CARDS=[["Save the workbook","Ctrl + S"],["Save As (new name or place)","F12"],["Undo","Ctrl + Z"],["Redo","Ctrl + Y"],["Go to cell A1","Ctrl + Home"],["Go to the last used cell","Ctrl + End"],["Jump to the edge of the data","Ctrl + Arrow"],["Select to the end of the data","Ctrl + Shift + Arrow"],["Select the whole column","Ctrl + Space"],["Select the whole row","Shift + Space"],["Edit the active cell","F2"],["Cycle absolute and relative references","F4"],["AutoSum","Alt + ="],["Create a Table","Ctrl + T"],["Turn filters on or off","Ctrl + Shift + L"],["Flash Fill","Ctrl + E"],["Fill down","Ctrl + D"],["Format Cells","Ctrl + 1"],["Paste Special","Ctrl + Alt + V"],["Find","Ctrl + F"],["Replace","Ctrl + H"],["Go To","Ctrl + G or F5"],["Select visible cells only","Alt + ;"],["Insert today's date","Ctrl + ;"],["Show all formulas","Ctrl + `"],["Insert a chart on the sheet","Alt + F1"],["Refresh a PivotTable","Alt + F5"],["New line inside a cell","Alt + Enter"],["Fill every selected cell with the same entry","Ctrl + Enter"],["Print preview","Ctrl + P"]];
+
+/* ---------- lab missions ---------- */
+const MISSIONS=[
+ ["Total revenue of all 30 orders",6888900,"SUM over the Revenue column, rows 3 to 32.","=SUM(I3:I32)"],
+ ["The average order value",229630,"AVERAGE works just like SUM.","=AVERAGE(I3:I32)"],
+ ["Revenue from Lagos",2145900,"SUMIF(range to check, condition, range to add).","=SUMIF(D3:D32,\"Lagos\",I3:I32)"],
+ ["How many orders were cancelled?",3,"COUNTIF counts matching cells in the Status column.","=COUNTIF(J3:J32,\"Cancelled\")"],
+ ["Completed Electronics orders (count)",8,"Two conditions, so use COUNTIFS.","=COUNTIFS(E3:E32,\"Electronics\",J3:J32,\"Completed\")"],
+ ["Revenue of completed Kano orders",1060800,"SUMIFS puts the range to add first.","=SUMIFS(I3:I32,D3:D32,\"Kano\",J3:J32,\"Completed\")"],
+ ["Orders worth 200,000 or more (count)",12,"Put the comparison inside quotes: \">=200000\".","=COUNTIF(I3:I32,\">=200000\")"],
+ ["The largest single order",720000,"MAX over the revenue column.","=MAX(I3:I32)"],
+ ["The average Lagos order",214590,"AVERAGEIF follows the same pattern as SUMIF.","=AVERAGEIF(D3:D32,\"Lagos\",I3:I32)"],
+ ["Revenue of Pending Groceries orders",955000,"Two conditions on the sum, so SUMIFS.","=SUMIFS(I3:I32,E3:E32,\"Groceries\",J3:J32,\"Pending\")"],
+ ["The first name of the rep on ORD-001 (cell C3)","Emeka","LEFT, and FIND to locate the space.","=LEFT(C3,FIND(\" \",C3)-1)"],
+ ["Show High or Standard for ORD-002 (row 4): High at 200,000 or more","High","IF(test, if true, if false).","=IF(I4>=200000,\"High\",\"Standard\")"],
+ ["Commission of 5% on completed revenue",243720,"Add up the completed orders, then multiply.","=SUMIF(J3:J32,\"Completed\",I3:I32)*0.05"]
+];
+const EXAMPLES=['=SUM(G3:G32)','=MEDIAN(I3:I32)','=COUNTIF(F3:F32,"*Rice*")','=C3&" ("&D3&")"','=TEXT(B3,"dddd")','=I3/(G3-G3)','=SUMM(I3:I32)','=C3*2'];
+const SHEET_TASKS=[
+ ["Sort by Revenue (NGN), largest first. Which Order ID is in the top row?","ORD-028","Click the Revenue header. Click again to flip the direction."],
+ ["Filter Region to Lagos. How many records does the Status Bar report?","10","Use the Filter button next to Region and tick only Lagos."],
+ ["Filter Region to Lagos and Status to Completed, then select every visible Revenue cell. What is the Sum?","1977900","Drag down the Revenue column, or click the first cell and Shift + click the last."],
+ ["Clear all filters, then select every Revenue cell from row 3 to 32. What is the Sum in the Status Bar?","6888900","Press Clear filters, then click the first and Shift + click the last Revenue cell."],
+ ["Sort Region A to Z, then Revenue largest first (Shift + click the second header). Which Order ID is in the first row?","ORD-002","The first click sorts Region, the Shift + click adds Revenue as a second level."]
+];
+
+/* ---------- views ---------- */
+const view=$('#view');let tab='quiz';
+function setTab(t,push){tab=t;document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
+  if(push){try{history.replaceState(null,'','#'+t)}catch(e){}}
+  ({quiz:vQuiz,sheet:vSheet,lab:vLab,cards:vCards})[t]();}
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab,true)));
+
+/* quiz */
+let qs=null;
+function vQuiz(){
+  const chips=n=>Array.from({length:n.to-n.from+1},(_,i)=>{const c=n.from+i;return`<button class="chip" data-ch="${c}" aria-pressed="false">${c}. ${CH[c-1]}${P.quiz[c]!==undefined?'<span class="dot" title="Finished"></span>':''}</button>`}).join('');
+  view.innerHTML=`<section class="panel"><h2>Check what you know</h2><p class="lead">Pick a chapter for three quick questions, or take the mixed challenge. Every answer comes with the reason.</p>
+  <div class="group">Part 1: Foundations</div><div class="chips">${chips({from:1,to:7})}</div>
+  <div class="group">Part 2: Analysis tools</div><div class="chips">${chips({from:8,to:17})}</div>
+  <div class="chips"><button class="btn" id="mix">Mixed challenge: 10 random questions</button></div><div id="qbox"></div></section>`;
+  view.querySelectorAll('[data-ch]').forEach(b=>b.addEventListener('click',()=>startQuiz(+b.dataset.ch)));
+  $('#mix').addEventListener('click',()=>startQuiz(0));
+  if(qs&&qs.live)renderQ();
+}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startQuiz(ch){
+  let items;
+  if(ch){items=QZ[ch].map(q=>({q,ch}))}else{const all=[];Object.keys(QZ).forEach(c=>QZ[c].forEach(q=>all.push({q,ch:+c})));items=shuffle(all).slice(0,10)}
+  qs={ch,items,i:0,score:0,live:true,answered:false};
+  view.querySelectorAll('[data-ch]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.ch===ch)));
+  renderQ();$('#qbox').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function renderQ(){
+  const box=$('#qbox');if(!box)return;
+  if(qs.i>=qs.items.length){
+    const pct=Math.round(qs.score/qs.items.length*100);
+    if(qs.ch){P.quiz[qs.ch]=Math.max(P.quiz[qs.ch]||0,qs.score);save();paint()}
+    box.innerHTML=`<hr style="border:0;border-top:1px solid var(--line);margin:20px 0"><div class="score">${qs.score} / ${qs.items.length}</div><p>${pct===100?'Perfect round. You are ready for the next chapter.':pct>=60?'Solid. Read the explanations on the ones you missed, then try again.':'Worth a second read of the chapter, then try again.'}</p><button class="btn" id="again">Try again</button>`;
+    $('#again').addEventListener('click',()=>{startQuiz(qs.ch)});qs.live=false;return;
+  }
+  const it=qs.items[qs.i],q=it.q,opts=shuffle(q.slice(0,q.length-1).map((t,k)=>({t,ok:k===0}))).filter(o=>o.t);
+  qs.opts=opts;qs.answered=false;
+  box.innerHTML=`<hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+  <div class="qhead"><span>${qs.ch?'Chapter '+it.ch+': '+CH[it.ch-1]:'Chapter '+it.ch+' · '+CH[it.ch-1]}</span><span>${qs.i+1} of ${qs.items.length} · score ${qs.score}</span></div>
+  <div class="bar"><i style="width:${qs.i/qs.items.length*100}%"></i></div>
+  <p class="q">${h(promptFor(it))}</p><div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${h(o.t)}</button>`).join('')}</div><div id="why"></div>`;
+  box.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(+b.dataset.k)));
+}
+const PROMPTS={
+1:["Which cell address sits in column C, row 5?","What is the difference between a workbook and a worksheet?","Which statement about Excel's size limit is true?"],
+2:["Which part of the window shows what a cell actually contains?","Your Ribbon has vanished. What do you do?","What is the difference between Ctrl + S and F12?"],
+3:["Which shortcut takes you to the last used cell?","How do you select from the active cell to the end of a column of data?","How do you fill every blank in a column with one value?"],
+4:["A number sits on the left of its cell. What does that tell you?","How should you enter 75 percent?","How do you keep the leading zero in a phone number?"],
+5:["Excel offers to sort just one column. What should you choose?","What does sorting by Region, then Revenue, do?","How can you restore the original order after sorting and saving?"],
+6:["What is the key difference between filtering and sorting?","The row numbers have turned blue. What does that mean?","What does =SUM do on a filtered table?"],
+7:["How do you centre a title across a table without merging cells?","After entering dates, what is the first check?","Why press Ctrl + Home before saving?"],
+8:["What does =2+3*4 return?","Which reference stays fixed when copied down and across?","Why is the median revenue (189,000) lower than the average (229,630)?"],
+9:["Which formula totals the revenue of Lagos orders?","In SUMIFS, which argument comes first?","What does =COUNTIF(F3:F32,\"*Rice*\") count?"],
+10:["What does =LEFT(A3,3) return for ORD-001?","What does =B32-B3 return for the first and last order dates?","Why use TRIM on imported text?"],
+11:["What is the fourth argument of XLOOKUP for?","What does FALSE mean at the end of VLOOKUP?","Why might a lookup return #N/A even though the name looks right?"],
+12:["What usually causes #DIV/0!?","What does ###### mean?","When does #REF! appear?"],
+13:["How do you create a drop-down list in a cell?","What does the rule =$J3=\"Cancelled\" do when applied to A3:J32?","How can you find bad data that is already in a sheet?"],
+14:["Which chart shows a trend over time?","Where should a column chart's value axis start?","Which title helps the reader most?"],
+15:["What must you do after changing the source data of a PivotTable?","Which PivotTable area holds the numbers to summarise?","What does a PivotTable need in its source data?"],
+16:["Which setting repeats the header row on every printed page?","When do locked cells actually protect your work?","Which format suits a final, read-only report?"],
+17:["Which principle matters most in the capstone report?","What are the pending revenue and order count in Q1?","Which rep has the highest achievement against target?"]};
+const promptFor=it=>PROMPTS[it.ch][QZ[it.ch].indexOf(it.q)];
+function answer(k){
+  if(qs.answered)return;qs.answered=true;
+  const it=qs.items[qs.i],q=it.q,ok=qs.opts[k].ok;if(ok)qs.score++;
+  $('#qbox').querySelectorAll('.opt').forEach((b,i)=>{b.disabled=true;if(qs.opts[i].ok)b.classList.add('right');else if(i===k)b.classList.add('wrong')});
+  $('#why').innerHTML=`<div class="why ${ok?'':'no'}"><strong>${ok?'Correct.':'Not quite.'}</strong> ${h(q[q.length-1])}</div><div style="margin-top:12px"><button class="btn" id="nx">${qs.i+1<qs.items.length?'Next question':'See my score'}</button></div>`;
+  $('#nx').addEventListener('click',()=>{qs.i++;renderQ()});$('#nx').focus();
+}
+
+/* practice sheet */
+const S={sort:[],filt:{},sel:null,drag:false,pop:null};
+function viewRows(){
+  let rows=DATA.map((r,i)=>({r,i}));
+  if(S.sort.length)rows.sort((a,b)=>{for(const l of S.sort){const x=a.r[l.c],y=b.r[l.c];const d=typeof x==='number'?x-y:String(x).localeCompare(String(y));if(d)return l.d*d}return a.i-b.i});
+  return rows.map((o,p)=>({r:o.r,p}));
+}
+function passes(row){
+  for(const c in S.filt){const f=S.filt[c];if(!f)continue;const v=row[c];
+    if(f.set&&!f.set.has(v))return false;if(f.min!==undefined&&!(v>=f.min))return false}
+  return true;
+}
+function vSheet(){
+  view.innerHTML=`<section class="panel"><h2>Practice sheet</h2><p class="lead">The 30 Zenith orders from Chapter 7. Click headers to sort, use the Filter buttons, and drag across cells to read the Status Bar, just as in Excel.</p>
+  <div class="split two"><div><div class="xl"><div class="fbar"><div class="nb" id="nb">A1</div><div class="fx">fx</div><div class="fv" id="fv"></div></div><div class="scroll" id="scr"><table class="g" id="tbl"></table></div><div class="sb"><span id="sl">Ready</span><span id="sr"></span></div></div>
+  <div class="chips" style="margin-top:12px"><button class="btn ghost" id="clr">Clear filters</button><button class="btn ghost" id="rst">Reset sort and filters</button><span class="fb" id="lv"></span></div></div>
+  <div><h2 style="font-size:18px">Challenges</h2><p class="fb" style="margin:0 0 4px">Do each task on the sheet, then type what you find.</p><div class="tasks" id="tasks"></div></div></div></section>`;
+  S.pop=null;drawSheet();drawTasks();
+  $('#clr').addEventListener('click',()=>{S.filt={};S.sel=null;drawSheet()});
+  $('#rst').addEventListener('click',()=>{S.filt={};S.sort=[];S.sel=null;drawSheet()});
+  const t=$('#tbl');
+  t.addEventListener('mousedown',e=>{const td=e.target.closest('td[data-p]');if(!td)return;e.preventDefault();const p=+td.dataset.p,c=+td.dataset.c;
+    if(e.shiftKey&&S.sel){S.sel.p2=p;S.sel.c2=c}else{S.sel={p1:p,c1:c,p2:p,c2:c}}S.drag=true;paintSel()});
+  t.addEventListener('mouseover',e=>{if(!S.drag)return;const td=e.target.closest('td[data-p]');if(!td)return;S.sel.p2=+td.dataset.p;S.sel.c2=+td.dataset.c;paintSel()});
+  document.addEventListener('mouseup',()=>{S.drag=false});
+  t.addEventListener('click',e=>{
+    const sb=e.target.closest('[data-sort]');if(sb){sortBy(+sb.dataset.sort,e.shiftKey);return}
+    const fb=e.target.closest('[data-filt]');if(fb){openFilter(+fb.dataset.filt,fb);e.stopPropagation()}});
+}
+function sortBy(c,add){
+  const i=S.sort.findIndex(l=>l.c===c);
+  if(add){if(i>=0)S.sort[i].d*=-1;else S.sort.push({c,d:1})}
+  else{const d=i>=0&&S.sort.length===1?S.sort[0].d*-1:1;S.sort=[{c,d}]}
+  S.sel=null;drawSheet();
+}
+function openFilter(c,btn){
+  closePop();const pop=document.createElement('div');pop.className='pop';pop.id='pop';
+  if(NUMCOL.has(c)&&c!==1){const cur=S.filt[c]&&S.filt[c].min!==undefined?S.filt[c].min:'';
+    pop.innerHTML=`<strong>${h(HEAD[c])}</strong><p class="fb" style="margin:6px 0">Greater than or equal to</p><input type="number" id="mn" value="${cur}" placeholder="e.g. 200000"><div style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="ap">Apply</button><button class="btn ghost" id="cl">Clear</button></div>`;
+  }else{
+    const vals=[...new Set(DATA.map(r=>r[c]))].sort((a,b)=>typeof a==='number'?a-b:String(a).localeCompare(String(b)));
+    const cur=S.filt[c]&&S.filt[c].set;
+    pop.innerHTML=`<strong>${h(HEAD[c])}</strong>`+vals.map(v=>`<label><input type="checkbox" value="${h(v)}" ${!cur||cur.has(v)?'checked':''}> ${h(fmtCell(c,v))}</label>`).join('')+`<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="ap">Apply</button><button class="btn ghost" id="cl">Clear</button></div>`;
+    pop._vals=vals;
+  }
+  const r=btn.getBoundingClientRect(),w=$('#scr').getBoundingClientRect();
+  document.body.appendChild(pop);
+  pop.style.position='fixed';pop.style.top=Math.min(r.bottom+4,window.innerHeight-320)+'px';pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-240))+'px';
+  pop.addEventListener('click',e=>e.stopPropagation());
+  $('#ap',pop).addEventListener('click',()=>{
+    if(pop._vals){const chosen=new Set(pop._vals.filter((v,i)=>pop.querySelectorAll('input[type=checkbox]')[i].checked));S.filt[c]=chosen.size===pop._vals.length?null:{set:chosen}}
+    else{const v=$('#mn',pop).value;S.filt[c]=v===''?null:{min:+v}}
+    closePop();S.sel=null;drawSheet()});
+  $('#cl',pop).addEventListener('click',()=>{S.filt[c]=null;closePop();S.sel=null;drawSheet()});
+  setTimeout(()=>document.addEventListener('click',closePop,{once:true}),0);
+}
+function closePop(){const p=$('#pop');if(p)p.remove()}
+let VIEW=[];
+function drawSheet(){
+  const all=viewRows();VIEW=all.filter(o=>passes(o.r));
+  const filtered=Object.values(S.filt).some(Boolean);
+  const th=`<thead><tr><th class="rn"></th>${[...LET].map(l=>`<th>${l}</th>`).join('')}</tr></thead>`;
+  let b=`<tbody><tr><th class="rn">1</th><td class="title" colspan="10">Zenith Consumer Goods Limited, Q1 2024 Sales Records</td></tr>`;
+  b+=`<tr class="hd"><th class="rn">2</th>${HEAD.map((x,c)=>{const l=S.sort.findIndex(s=>s.c===c);const arrow=l>=0?(S.sort[l].d>0?' ▲':' ▼')+(S.sort.length>1?'<sup>'+(l+1)+'</sup>':''):'';const fl=!!(S.filt[c]);
+    return`<td><button class="hbtn" data-sort="${c}" title="Sort. Shift + click to add a second level">${h(x)}${arrow}</button>${[0,1,5].includes(c)?'':`<button class="hbtn fl ${fl?'on':''}" data-filt="${c}" title="Filter ${h(x)}">${fl?'●':'▾'}</button>`}</td>`}).join('')}</tr>`;
+  VIEW.forEach((o,vi)=>{b+=`<tr><th class="rn ${filtered?'f':''}">${o.p+3}</th>${o.r.map((v,c)=>`<td data-p="${vi}" data-c="${c}" class="${NUMCOL.has(c)?'num':''}">${h(fmtCell(c,v))}</td>`).join('')}</tr>`});
+  b+='</tbody>';
+  $('#tbl').innerHTML=th+b;
+  $('#sl').textContent=filtered?`${VIEW.length} of ${DATA.length} records found`:'Ready';
+  $('#lv').textContent=S.sort.length?'Sort: '+S.sort.map(l=>HEAD[l.c]+(l.d>0?' ↑':' ↓')).join(', then '):'';
+  paintSel();
+}
+function selStats(){
+  if(!S.sel)return null;const s=S.sel;const p1=Math.min(s.p1,s.p2),p2=Math.max(s.p1,s.p2),c1=Math.min(s.c1,s.c2),c2=Math.max(s.c1,s.c2);
+  const vals=[];for(let p=p1;p<=p2;p++)for(let c=c1;c<=c2;c++)if(VIEW[p])vals.push([c,VIEW[p].r[c]]);
+  return{p1,p2,c1,c2,vals};
+}
+function paintSel(){
+  document.querySelectorAll('td.sel').forEach(x=>x.classList.remove('sel'));
+  const st=selStats();
+  if(!st){$('#nb').textContent='A1';$('#fv').textContent='';$('#sr').textContent='';return}
+  document.querySelectorAll('td[data-p]').forEach(td=>{const p=+td.dataset.p,c=+td.dataset.c;if(p>=st.p1&&p<=st.p2&&c>=st.c1&&c<=st.c2)td.classList.add('sel')});
+  const a=(c,p)=>LET[c]+(VIEW[p].p+3);
+  $('#nb').textContent=(st.p1===st.p2&&st.c1===st.c2)?a(st.c1,st.p1):a(st.c1,st.p1)+':'+a(st.c2,st.p2);
+  const first=VIEW[st.p1];const rn=first.p+3;
+  $('#fv').textContent=st.c1===8?`=G${rn}*H${rn}`:fmtCell(st.c1,first.r[st.c1]);
+  const n=st.vals.filter(([c,v])=>typeof v==='number'&&c!==1).map(x=>x[1]);
+  const cnt=st.vals.length;
+  $('#sr').textContent=n.length?`Average: ${nf.format(n.reduce((a,b)=>a+b,0)/n.length)}   Count: ${cnt}   Sum: ${nf.format(n.reduce((a,b)=>a+b,0))}`:(cnt>1?`Count: ${cnt}`:'');
+}
+function drawTasks(){
+  $('#tasks').innerHTML=SHEET_TASKS.map((t,i)=>`<div class="task ${P.sheet[i]?'done':''}" id="st${i}"><strong>${i+1}.</strong> ${h(t[0])}<div class="row"><input type="text" id="sa${i}" placeholder="Your answer" ${P.sheet[i]?'disabled value="'+h(t[1])+'"':''} aria-label="Answer to task ${i+1}"><button class="btn" data-chk="${i}" ${P.sheet[i]?'disabled':''}>Check</button><button class="btn ghost" data-hint="${i}">Hint</button></div><div class="fb" id="sf${i}">${P.sheet[i]?'Done. Well spotted.':''}</div></div>`).join('');
+  $('#tasks').querySelectorAll('[data-chk]').forEach(b=>b.addEventListener('click',()=>{const i=+b.dataset.chk;const v=$('#sa'+i).value.replace(/[,\s]/g,'').toLowerCase();
+    if(v&&v===SHEET_TASKS[i][1].toLowerCase()){P.sheet[i]=1;save();paint();drawTasks()}else{$('#sf'+i).textContent='Not yet. Check the sheet and try again.'}}));
+  $('#tasks').querySelectorAll('[data-hint]').forEach(b=>b.addEventListener('click',()=>{$('#sf'+b.dataset.hint).textContent='Hint: '+SHEET_TASKS[+b.dataset.hint][2]}));
+}
+
+/* formula lab */
+let cur=0;
+function vLab(){
+  view.innerHTML=`<section class="panel"><h2>Formula lab</h2><p class="lead">Type a real Excel formula and see its result on the Zenith data. Cell references use the same layout as the handbook: headers in row 2, orders in rows 3 to 32.</p>
+  <div class="cols">${HEAD.map((x,i)=>`<span><b>${LET[i]}</b> ${h(x)}</span>`).join('')}</div>
+  <label for="fin" class="tag">Formula</label>
+  <input id="fin" class="fin" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" value="=SUMIF(D3:D32,&quot;Lagos&quot;,I3:I32)" aria-describedby="res">
+  <div class="res" id="res" aria-live="polite"></div>
+  <div class="group" style="margin-top:16px">Try an example</div><div class="chips" id="ex">${EXAMPLES.map(x=>`<button class="chip" data-f="${h(x)}"><code>${h(x)}</code></button>`).join('')}</div>
+  <div class="group">Missions</div><p class="fb" style="margin:0">Pick a mission, then write a formula whose result matches. Supported: SUM, AVERAGE, MEDIAN, MIN, MAX, COUNT, COUNTA, ROUND, IF, AND, OR, SUMIF(S), COUNTIF(S), AVERAGEIF(S), LEFT, RIGHT, MID, LEN, FIND, TRIM, UPPER, LOWER, PROPER, SUBSTITUTE, TEXT, VALUE, DATE, XLOOKUP, VLOOKUP, INDEX, MATCH, IFERROR.</p>
+  <div class="mis" id="mis"></div><div id="mx" class="res" style="display:none"></div></section>`;
+  const inp=$('#fin');inp.addEventListener('input',run);
+  $('#ex').querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{inp.value=b.dataset.f;run();inp.focus()}));
+  drawMis();run();
+}
+function run(){
+  const r=evalFormula($('#fin').value),box=$('#res');
+  if(!r.ok){box.className='res';box.innerHTML=`<span class="tag">Waiting</span><div class="v" style="font-size:18px;font-weight:600">${h(r.msg)}</div>`;return}
+  if(isErr(r.v)){box.className='res err';box.innerHTML=`<span class="tag">Error</span><div class="v">${h(r.v.code)}</div><p style="margin:6px 0 0">${h(ERRMSG[r.v.code]||'')}</p>`}
+  else{box.className='res';box.innerHTML=`<span class="tag">Result · ${typeof r.v}</span><div class="v">${h(showVal(r.v))}</div>`;checkMission(r.v)}
+}
+function same(a,b){return typeof b==='number'?(typeof a==='number'&&Math.abs(a-b)<0.005):String(a).toLowerCase()===String(b).toLowerCase()}
+function checkMission(v){
+  const m=MISSIONS[cur];if(!m||P.lab[cur])return;
+  if(same(v,m[1])){P.lab[cur]=1;save();paint();drawMis();const x=$('#mx');x.style.display='block';x.innerHTML=`<span class="tag">Mission complete</span><div class="v" style="font-size:20px">That matches: ${h(showVal(m[1]))}. Nice work.</div>`}
+}
+function drawMis(){
+  $('#mis').innerHTML=MISSIONS.map((m,i)=>`<div><button class="m ${P.lab[i]?'done':''} ${i===cur?'cur':''}" data-m="${i}"><span class="n">${P.lab[i]?'✓':i+1}</span><span>${h(m[0])}<br><span class="fb">Target: <code>${h(showVal(m[1]))}</code></span></span></button>${i===cur?`<div class="fb" style="margin:6px 0 0 38px">Hint: ${h(m[2])} <button class="chip" id="sol" style="margin-left:6px">Show a solution</button></div>`:''}</div>`).join('');
+  $('#mis').querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>{cur=+b.dataset.m;$('#mx').style.display='none';drawMis()}));
+  const s=$('#sol');if(s)s.addEventListener('click',()=>{$('#fin').value=MISSIONS[cur][3];run()});
+}
+
+/* cards */
+let cd={i:0,order:null,flip:false};
+function vCards(){
+  if(!cd.order)cd.order=shuffle(CARDS.map((_,i)=>i));
+  view.innerHTML=`<section class="panel"><h2>Shortcut cards</h2><p class="lead">Read the task, say the shortcut, then flip the card. Mark the ones you know so the deck can focus on the rest.</p><div class="qhead"><span id="cn"></span><span id="ck"></span></div><div class="bar"><i id="cb" style="width:0"></i></div><div class="deck"><div class="card" id="card" tabindex="0" role="button" aria-label="Flip card"><div class="face f"><span class="tag" style="margin-bottom:10px">What is the shortcut for</span><span class="p" id="cf"></span></div><div class="face b"><span class="k" id="cbk"></span></div></div></div>
+  <div class="actions"><button class="btn ghost" id="again">Again</button><button class="btn" id="got">I know it</button><button class="btn ghost" id="shuf">Reshuffle</button></div></section>`;
+  $('#card').addEventListener('click',()=>{cd.flip=!cd.flip;$('#card').classList.toggle('flip',cd.flip)});
+  $('#card').addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();$('#card').click()}});
+  $('#got').addEventListener('click',()=>{P.cards[cd.order[cd.i]]=1;save();paint();nextCard()});
+  $('#again').addEventListener('click',()=>{delete P.cards[cd.order[cd.i]];save();paint();nextCard()});
+  $('#shuf').addEventListener('click',()=>{cd.order=shuffle(CARDS.map((_,i)=>i));cd.i=0;drawCard()});
+  drawCard();
+}
+function nextCard(){cd.i=(cd.i+1)%CARDS.length;drawCard()}
+function drawCard(){
+  // prefer cards not yet known
+  const unk=cd.order.filter(i=>!P.cards[i]);
+  if(unk.length&&P.cards[cd.order[cd.i]]){const j=cd.order.findIndex((x,k)=>k>cd.i&&!P.cards[x]);cd.i=j>=0?j:cd.order.findIndex(x=>!P.cards[x])}
+  const c=CARDS[cd.order[cd.i]];cd.flip=false;$('#card').classList.remove('flip');
+  $('#cf').textContent=c[0];$('#cbk').textContent=c[1];
+  const known=Object.keys(P.cards).length;$('#cn').textContent=`Card ${cd.i+1} of ${CARDS.length}`;$('#ck').textContent=`${known} of ${CARDS.length} known`;$('#cb').style.width=known/CARDS.length*100+'%';
+}
+
+/* boot */
+window.__lab={evalFormula,MISSIONS,DATA,showVal,same};
+paint();
+const hs=(location.hash||'').slice(1);setTab(['quiz','sheet','lab','cards'].includes(hs)?hs:'quiz',false);
+</script>
+
+</body>
+</html>
